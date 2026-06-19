@@ -206,3 +206,46 @@ h1{
     color: #3730a3;
     margin-bottom: 10px;
 }
+
+@media (max-width: 768px){
+
+    body{
+        padding: 15px;
+        align-items: flex-start;
+    }
+
+    .container{
+        width: 100%;
+        padding: 20px;
+    }
+
+    .upload-section{
+        flex-direction: column;
+    }
+
+    #analyzeBtn{
+        width: 100%;
+    }
+
+    .stats-container{
+        flex-direction: column;
+    }
+
+    .stat-card{
+        width: 100%;
+    }
+
+    #resultBox{
+        padding: 18px;
+        font-size: 14px;
+    }
+
+    .skill-badge,
+    .missing-skill-badge,
+    .action-badge,
+    .section-found,
+    .section-missing{
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}

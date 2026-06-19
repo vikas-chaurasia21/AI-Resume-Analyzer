@@ -1,6 +1,7 @@
 # AI Resume Analyzer
 
 🔗 Live Demo: https://vikas-chaurasia21-ai-resume-analyze.vercel.app/
+
 🔗 GitHub Repository: https://github.com/vikas-chaurasia21/AI-Resume-Analyzer
 
 ## Features

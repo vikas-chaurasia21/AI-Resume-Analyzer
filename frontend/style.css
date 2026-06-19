@@ -210,12 +210,16 @@ h1{
 @media (max-width: 768px){
 
     body{
+        display: flex;
+        justify-content: center;
+        align-items: center;   /* Ye change kar */
+        min-height: 100vh;
         padding: 15px;
-        align-items: flex-start;
     }
 
     .container{
         width: 100%;
+        max-width: 450px;
         padding: 20px;
     }
 
@@ -227,7 +231,7 @@ h1{
         width: 100%;
     }
 
-    .stats-container{
+    .stat-container{
         flex-direction: column;
     }
 
@@ -238,11 +242,11 @@ h1{
     #resultBox{
         padding: 18px;
         font-size: 14px;
+        overflow-wrap: break-word;
+        word-break: break-word;
     }
 
     .skill-badge,
-    .missing-skill-badge,
-    .action-badge,
     .section-found,
     .section-missing{
         font-size: 12px;

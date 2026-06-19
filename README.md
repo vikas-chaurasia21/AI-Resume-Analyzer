@@ -13,7 +13,14 @@
 - Downloadable Report
 
 ## Tech Stack
-Frontend: HTML, CSS, JavaScript
-Backend: Node.js, Express
-AI: Gemini API
-Deployment: Vercel, Railway
+## Frontend: 
+  HTML, CSS, JavaScript
+
+## Backend: 
+  Node.js, Express
+
+## AI:
+  Gemini API
+
+## Deployment: 
+  Vercel, Railway

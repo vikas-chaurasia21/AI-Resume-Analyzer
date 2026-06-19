@@ -326,7 +326,7 @@ function getTotalSkillCount(skillCategories) {
 }
 
 async function getAIFeedback(resumeText) {
-  const response = await fetch("http://localhost:5000/analyze-ai", {
+  const response = await fetch("ai-resume-analyzer-production-40dc.up.railway.app", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

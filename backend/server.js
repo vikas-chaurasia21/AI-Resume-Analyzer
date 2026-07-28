@@ -67,5 +67,5 @@ app.post("/analyze-ai", async function (req , res) {
 const PORT = process.env.PORT || 5000
 
 app.listen(PORT , function(){
-    console.log('Server running on ${PORT}')
+    console.log(`Server running on ${PORT}`)
 })

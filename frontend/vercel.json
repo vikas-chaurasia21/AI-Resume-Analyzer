@@ -1,7 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/",
+      "source": "/api/analyze-ai",
+      "destination": "https://ai-resume-analyzer-backend-vv21.vercel.app/api/analyze-ai"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]

@@ -1,14 +1,4 @@
-const express = require("express")
-const cors = require("cors")
-const dotenv = require("dotenv")
 const { GoogleGenerativeAI } = require("@google/generative-ai")
-
-dotenv.config()
-
-const app = express()
-
-app.use(cors())
-app.use(express.json({ limit: "10mb" }))
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
@@ -58,22 +48,19 @@ async function callModelWithRetry(modelName, prompt, maxRetries = 3) {
                 `Model "${modelName}" attempt ${attempt} failed: ${error.message}`
             )
 
-            // Agar retryable error hai aur retries bache hain, wait karke try karo
             if (isRetryableError(error) && attempt < maxRetries) {
-                const waitTime = attempt * 1500 // 1.5s, 3s, 4.5s...
+                const waitTime = attempt * 1500
                 console.log(`Waiting ${waitTime}ms before retry...`)
                 await sleep(waitTime)
                 continue
             }
 
-            // Agar retryable nahi hai (jaise 400 bad request), turant fail karo
             if (!isRetryableError(error)) {
                 throw error
             }
         }
     }
 
-    // Saare retries khatam ho gaye is model ke liye
     throw lastError
 }
 
@@ -81,7 +68,6 @@ async function callModelWithRetry(modelName, prompt, maxRetries = 3) {
 // HELPER: try multiple models in sequence (fallback chain)
 // ======================================================
 async function getAIFeedbackWithFallback(prompt) {
-    // Yahan apne available models daal do (order matters — pehla priority hai)
     const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
 
     let lastError = null
@@ -97,15 +83,32 @@ async function getAIFeedbackWithFallback(prompt) {
         }
     }
 
-    // Saare models fail ho gaye
     throw lastError
 }
 
 // ======================================================
-// ROUTE
+// SERVERLESS FUNCTION (Vercel automatically routes this
+// file to: /api/analyze-ai)
 // ======================================================
-app.post("/analyze-ai", async function (req, res) {
-    console.log("POST request recieved")
+module.exports = async function handler(req, res) {
+    // ----------------------------------------------------
+    // CORS headers (manually set — Express cors() middleware
+    // does NOT work here, this is a plain serverless function)
+    // ----------------------------------------------------
+    res.setHeader("Access-Control-Allow-Origin", "*")
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+
+    // Browser preflight request
+    if (req.method === "OPTIONS") {
+        return res.status(200).end()
+    }
+
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method not allowed" })
+    }
+
+    console.log("POST request received")
 
     try {
         const resumeText = req.body.resumeText
@@ -145,7 +148,6 @@ app.post("/analyze-ai", async function (req, res) {
     } catch (error) {
         console.log("AI Error:", error.message)
 
-        // User ko friendly message do, technical detail chhupao
         const isOverload = isRetryableError(error)
 
         res.status(500).json({
@@ -154,10 +156,4 @@ app.post("/analyze-ai", async function (req, res) {
                 : error.message,
         })
     }
-})
-
-const PORT = process.env.PORT || 5000
-
-app.listen(PORT, function () {
-    console.log(`Server running on ${PORT}`)
-})
+}

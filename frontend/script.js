@@ -397,7 +397,7 @@ async function getAIFeedback(resumeText) {
   */
 
   const response = await fetch(
-    "http://localhost:5000/analyze-ai",
+    "https://ai-resume-analyzer-backend-vv21.vercel.app/api/analyze-ai",
     {
       method: "POST",
 

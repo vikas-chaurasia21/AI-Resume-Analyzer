@@ -9,23 +9,164 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 // DOM ELEMENTS
 // ======================================================
 
-const analyzeBtn =
-  document.querySelector("#analyzeBtn");
-
-const resultBox =
-  document.querySelector("#resultBox");
-
-const resumeFile =
-  document.querySelector("#resumeFile");
-
-const downloadBtn =
-  document.querySelector("#downloadBtn");
+const analyzeBtn = document.querySelector("#analyzeBtn");
+const resultBox = document.querySelector("#resultBox");
+const resumeFile = document.querySelector("#resumeFile");
+const downloadBtn = document.querySelector("#downloadBtn");
 
 // ======================================================
 // GLOBAL REPORT TEXT
 // ======================================================
 
 let reportText = "";
+
+// ======================================================
+// SKILL DETECTION
+// ======================================================
+
+function detectSkills(resumeText, skillCategories) {
+  const foundSkills = [];
+  const foundCategories = [];
+
+  // Case-insensitive comparison
+  const text = resumeText.toLowerCase();
+
+  for (const category in skillCategories) {
+    let categoryFound = false;
+
+    for (const skill of skillCategories[category]) {
+      if (text.includes(skill.toLowerCase())) {
+        foundSkills.push(skill);
+        categoryFound = true;
+      }
+    }
+
+    if (categoryFound) {
+      foundCategories.push(category);
+    }
+  }
+
+  return {
+    foundSkills,
+    foundCategories,
+  };
+}
+
+// ======================================================
+// MISSING SKILLS
+// ======================================================
+
+function detectMissingSkills(skillCategories, foundSkills) {
+  const missingSkills = [];
+
+  const foundSkillsLower = foundSkills.map((skill) => skill.toLowerCase());
+
+  for (const category in skillCategories) {
+    for (const skill of skillCategories[category]) {
+      if (!foundSkillsLower.includes(skill.toLowerCase())) {
+        missingSkills.push(skill);
+      }
+    }
+  }
+
+  return missingSkills;
+}
+
+// ======================================================
+// SECTION DETECTION
+// ======================================================
+
+function detectSections(resumeText, requiredSections) {
+  const foundSections = [];
+  const missingSections = [];
+
+  const text = resumeText.toLowerCase();
+
+  for (const section of requiredSections) {
+    if (text.includes(section.toLowerCase())) {
+      foundSections.push(section);
+    } else {
+      missingSections.push(section);
+    }
+  }
+
+  return {
+    foundSections,
+    missingSections,
+  };
+}
+
+// ======================================================
+// ACTION WORD DETECTION
+// ======================================================
+
+function detectActionWords(resumeText, actionWords) {
+  const foundActionWords = [];
+
+  const text = resumeText.toLowerCase();
+
+  for (const word of actionWords) {
+    if (text.includes(word.toLowerCase())) {
+      foundActionWords.push(word);
+    }
+  }
+
+  return foundActionWords;
+}
+
+// ======================================================
+// TOTAL SKILL COUNT
+// ======================================================
+
+function getTotalSkillCount(skillCategories) {
+  let total = 0;
+
+  for (const category in skillCategories) {
+    total += skillCategories[category].length;
+  }
+
+  return total;
+}
+
+// ======================================================
+// ATS SCORE
+// ======================================================
+
+function generateATSScore(
+  foundSkills,
+  foundSections,
+  foundActionWords,
+  skillCategories,
+  requiredSections,
+  actionWords,
+) {
+  const totalSkills = getTotalSkillCount(skillCategories);
+
+  const skillScore =
+    totalSkills > 0
+      ? (foundSkills.length / totalSkills) * 50
+      : 0;
+
+  const sectionScore =
+    requiredSections.length > 0
+      ? (foundSections.length / requiredSections.length) * 35
+      : 0;
+
+  const actionScore =
+    actionWords.length > 0
+      ? (foundActionWords.length / actionWords.length) * 15
+      : 0;
+
+  return {
+    atsScore: Math.round(skillScore + sectionScore + actionScore),
+
+    skillScore: Math.round(skillScore),
+
+    sectionScore: Math.round(sectionScore),
+
+    actionScore: Math.round(actionScore),
+  };
+}
 
 // ======================================================
 // SCORE BAR COLOR
@@ -60,27 +201,45 @@ function getStatus(atsScore) {
 }
 
 // ======================================================
+// SUGGESTIONS
+// ======================================================
+
+function generateSuggestions(foundCategories) {
+  const suggestion = [];
+
+  if (!foundCategories.includes("backend")) {
+    suggestion.push("Add backend skills.");
+  }
+
+  if (!foundCategories.includes("tools")) {
+    suggestion.push("Mention Git/GitHub experience.");
+  }
+
+  if (!foundCategories.includes("databases")) {
+    suggestion.push(
+      "Add at least one database skill like SQL, MongoDB or PostgreSQL.",
+    );
+  }
+
+  if (!foundCategories.includes("fundamentals")) {
+    suggestion.push(
+      "Mention CS fundamentals such as DSA, OOP, DBMS, OS or CN.",
+    );
+  }
+
+  return suggestion;
+}
+
+// ======================================================
 // SKILLS HTML
 // ======================================================
 
-function generateSkillsHTML(
-  foundSkills
-) {
-  if (!foundSkills || foundSkills.length === 0) {
-    return `
-      <p>
-        No major role-specific skills detected.
-      </p>
-    `;
-  }
-
+function generateSkillsHTML(foundSkills) {
   let skillsHTML = "";
 
   for (const skill of foundSkills) {
     skillsHTML += `
-      <span class="skill-badge">
-        ${skill}
-      </span>
+      <span class="skill-badge">${skill}</span>
     `;
   }
 
@@ -91,26 +250,10 @@ function generateSkillsHTML(
 // MISSING SKILLS HTML
 // ======================================================
 
-function generateMissingSkillsHTML(
-  missingSkills
-) {
-  if (
-    !missingSkills ||
-    missingSkills.length === 0
-  ) {
-    return `
-      <p>
-        No major role-specific missing skills detected.
-      </p>
-    `;
-  }
-
+function generateMissingSkillsHTML(missingSkills) {
   let missingSkillsHTML = "";
 
-  for (const skill of missingSkills.slice(
-    0,
-    12
-  )) {
+  for (const skill of missingSkills) {
     missingSkillsHTML += `
       <span class="missing-skill-badge">
         ${skill}
@@ -125,29 +268,11 @@ function generateMissingSkillsHTML(
 // SECTIONS HTML
 // ======================================================
 
-function generateSectionsHTML(
-  requiredSections,
-  foundSections
-) {
-  if (
-    !requiredSections ||
-    requiredSections.length === 0
-  ) {
-    return `
-      <p>
-        No section criteria available.
-      </p>
-    `;
-  }
-
+function generateSectionsHTML(requiredSections, foundSections) {
   let sectionsHTML = "";
 
-  for (
-    const section of requiredSections
-  ) {
-    if (
-      foundSections.includes(section)
-    ) {
+  for (const section of requiredSections) {
+    if (foundSections.includes(section)) {
       sectionsHTML += `
         <span class="section-found">
           ✅ ${section}
@@ -166,28 +291,13 @@ function generateSectionsHTML(
 }
 
 // ======================================================
-// ACTION WORD HTML
+// ACTION WORDS HTML
 // ======================================================
 
-function generateActionWordsHTML(
-  foundActionWords
-) {
-  if (
-    !foundActionWords ||
-    foundActionWords.length === 0
-  ) {
-    return `
-      <p>
-        No major action words detected.
-      </p>
-    `;
-  }
-
+function generateActionWordsHTML(foundActionWords) {
   let actionWordsHTML = "";
 
-  for (
-    const word of foundActionWords
-  ) {
+  for (const word of foundActionWords) {
     actionWordsHTML += `
       <span class="action-badge">
         ${word}
@@ -199,61 +309,92 @@ function generateActionWordsHTML(
 }
 
 // ======================================================
-// MISSING ACTION WORDS HTML
+// STRENGTHS & WEAKNESSES
 // ======================================================
 
-function generateMissingActionWordsHTML(
-  missingActionWords
-) {
-  if (
-    !missingActionWords ||
-    missingActionWords.length === 0
-  ) {
-    return `
-      <p>
-        Good action-word coverage.
-      </p>
+function generateStrengthsWeaknesses(foundCategories) {
+  const strengths = [];
+  const weaknesses = [];
+
+  if (foundCategories.includes("frontend")) {
+    strengths.push("Strong frontend skills found.");
+  } else {
+    weaknesses.push("Frontend skills are missing.");
+  }
+
+  if (foundCategories.includes("backend")) {
+    strengths.push("Backend skills found.");
+  } else {
+    weaknesses.push("Backend skills are missing.");
+  }
+
+  if (foundCategories.includes("databases")) {
+    strengths.push("Database knowledge found.");
+  } else {
+    weaknesses.push("Database skills are missing.");
+  }
+
+  if (foundCategories.includes("tools")) {
+    strengths.push("Tools like Git/GitHub are mentioned.");
+  } else {
+    weaknesses.push("Tools like Git/GitHub are missing.");
+  }
+
+  if (foundCategories.includes("fundamentals")) {
+    strengths.push("CS fundamentals are mentioned.");
+  } else {
+    weaknesses.push("CS fundamentals are missing.");
+  }
+
+  return {
+    strengths,
+    weaknesses,
+  };
+}
+
+// ======================================================
+// STRENGTHS & WEAKNESSES HTML
+// ======================================================
+
+function generateStrengthWeakness(strengths, weaknesses) {
+  let strengthsHTML = "";
+
+  for (const strength of strengths) {
+    strengthsHTML += `
+      <p>✅ ${strength}</p>
     `;
   }
 
-  let html = "";
+  let weaknessesHTML = "";
 
-  for (
-    const word of missingActionWords.slice(
-      0,
-      8
-    )
-  ) {
-    html += `
-      <span class="missing-skill-badge">
-        ${word}
-      </span>
+  for (const weakness of weaknesses) {
+    weaknessesHTML += `
+      <p>❌ ${weakness}</p>
     `;
   }
 
-  return html;
+  return {
+    strengthsHTML,
+    weaknessesHTML,
+  };
 }
 
 // ======================================================
 // AI FEEDBACK
 // ======================================================
 
-async function getAIFeedback(
-  resumeText
-) {
-  console.log(
-    "========== AI REQUEST =========="
-  );
+async function getAIFeedback(resumeText) {
+  console.log("========== AI REQUEST ==========");
+  console.log("Sending text to AI:", resumeText);
+  console.log("Resume text length:", resumeText.length);
 
-  console.log(
-    "Sending text to AI:",
-    resumeText
-  );
+  /*
+    LOCAL TESTING:
+    Backend should run on localhost:5000
 
-  console.log(
-    "Resume text length:",
-    resumeText.length
-  );
+    DEPLOYED VERSION:
+    Change this URL according to your Vercel setup.
+  */
 
   const response = await fetch(
     "https://ai-resume-analyzer-backend-vv21.vercel.app/api/analyze-ai",
@@ -261,38 +402,31 @@ async function getAIFeedback(
       method: "POST",
 
       headers: {
-        "Content-Type":
-          "application/json",
+        "Content-Type": "application/json",
       },
 
       body: JSON.stringify({
         resumeText: resumeText,
       }),
-    }
+    },
   );
 
-  console.log(
-    "AI response status:",
-    response.status
-  );
+  console.log("Response status:", response.status);
 
-  const responseText =
-    await response.text();
+  // Get response as text first.
+  // This prevents JSON parsing errors when backend
+  // sends an HTML error page.
+  const responseText = await response.text();
 
-  console.log(
-    "Raw AI backend response:",
-    responseText
-  );
+  console.log("Raw backend response:", responseText);
 
   let data;
 
   try {
-    data = JSON.parse(
-      responseText
-    );
+    data = JSON.parse(responseText);
   } catch (error) {
     throw new Error(
-      `AI backend returned invalid JSON. Status: ${response.status}`
+      `Backend returned invalid JSON. Status: ${response.status}`,
     );
   }
 
@@ -300,146 +434,40 @@ async function getAIFeedback(
     throw new Error(
       data.error ||
         data.message ||
-        `Backend error: ${response.status}`
+        `Backend error: ${response.status}`,
     );
   }
 
   if (!data.aiFeedback) {
-    throw new Error(
-      "AI feedback was not returned by backend."
-    );
+    throw new Error("AI feedback was not returned by backend.");
   }
 
   return data.aiFeedback;
 }
 
 // ======================================================
-// ROLE ANALYSIS API
-// ======================================================
-
-async function getRoleAnalysis(
-  resumeText
-) {
-  console.log(
-    "========== ROLE ANALYSIS REQUEST =========="
-  );
-
-  const response = await fetch(
-    "https://ai-resume-analyzer-backend-vv21.vercel.app/api/analyze-role",
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-
-      body: JSON.stringify({
-        resumeText: resumeText,
-      }),
-    }
-  );
-
-  console.log(
-    "Role response status:",
-    response.status
-  );
-
-  const responseText =
-    await response.text();
-
-  console.log(
-    "Raw role backend response:",
-    responseText
-  );
-
-  let data;
-
-  try {
-    data = JSON.parse(
-      responseText
-    );
-  } catch (error) {
-    throw new Error(
-      `Role analysis backend returned invalid JSON. Status: ${response.status}`
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data.error ||
-        data.message ||
-        `Role analysis failed: ${response.status}`
-    );
-  }
-
-  if (
-    !data.detectedRole ||
-    typeof data.confidence !==
-      "number"
-  ) {
-    throw new Error(
-      "Role analysis returned incomplete data."
-    );
-  }
-
-  if (!data.atsAvailable) {
-    throw new Error(
-      data.message ||
-        "ATS analysis is not available for this role."
-    );
-  }
-
-  return data;
-}
-
-// ======================================================
 // RESUME TEXT EXTRACTION
 // ======================================================
 
-async function extractResumeText(
-  file
-) {
-  console.log(
-    "========== FILE EXTRACTION =========="
-  );
-
-  console.log(
-    "File name:",
-    file.name
-  );
-
-  console.log(
-    "File type:",
-    file.type
-  );
+async function extractResumeText(file) {
+  console.log("========== FILE EXTRACTION ==========");
+  console.log("File name:", file.name);
+  console.log("File type:", file.type);
 
   // ====================================================
   // PDF
   // ====================================================
 
-  if (
-    file.type ===
-    "application/pdf"
-  ) {
-    console.log(
-      "Extracting PDF..."
-    );
+  if (file.type === "application/pdf") {
+    console.log("Extracting PDF...");
 
-    const arrayBuffer =
-      await file.arrayBuffer();
+    const arrayBuffer = await file.arrayBuffer();
 
-    const typedArray =
-      new Uint8Array(
-        arrayBuffer
-      );
+    const typedArray = new Uint8Array(arrayBuffer);
 
-    const pdf =
-      await pdfjsLib
-        .getDocument(
-          typedArray
-        )
-        .promise;
+    const pdf = await pdfjsLib
+      .getDocument(typedArray)
+      .promise;
 
     let resumeText = "";
 
@@ -448,39 +476,21 @@ async function extractResumeText(
       pageNumber <= pdf.numPages;
       pageNumber++
     ) {
-      const page =
-        await pdf.getPage(
-          pageNumber
-        );
+      const page = await pdf.getPage(pageNumber);
 
-      const textContent =
-        await page.getTextContent();
+      const textContent = await page.getTextContent();
 
-      for (
-        const item of
-          textContent.items
-      ) {
-        resumeText +=
-          item.str + " ";
+      for (const item of textContent.items) {
+        resumeText += item.str + " ";
       }
     }
 
-    console.log(
-      "Extracted PDF text:",
-      resumeText
-    );
-
-    console.log(
-      "PDF text length:",
-      resumeText.length
-    );
+    console.log("Extracted PDF text:", resumeText);
+    console.log("PDF text length:", resumeText.length);
 
     return {
-      resumeText:
-        resumeText.trim(),
-
-      totalPages:
-        pdf.numPages,
+      resumeText: resumeText.trim(),
+      totalPages: pdf.numPages,
     };
   }
 
@@ -492,38 +502,21 @@ async function extractResumeText(
     file.type ===
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ) {
-    console.log(
-      "Extracting DOCX..."
-    );
+    console.log("Extracting DOCX...");
 
-    const arrayBuffer =
-      await file.arrayBuffer();
+    const arrayBuffer = await file.arrayBuffer();
 
-    const result =
-      await mammoth.extractRawText(
-        {
-          arrayBuffer:
-            arrayBuffer,
-        }
-      );
+    const result = await mammoth.extractRawText({
+      arrayBuffer: arrayBuffer,
+    });
 
-    const resumeText =
-      result.value.trim();
+    const resumeText = result.value.trim();
 
-    console.log(
-      "Extracted DOCX text:",
-      resumeText
-    );
-
-    console.log(
-      "DOCX text length:",
-      resumeText.length
-    );
+    console.log("Extracted DOCX text:", resumeText);
+    console.log("DOCX text length:", resumeText.length);
 
     return {
-      resumeText:
-        resumeText,
-
+      resumeText: resumeText,
       totalPages: "N/A",
     };
   }
@@ -532,41 +525,26 @@ async function extractResumeText(
   // TXT
   // ====================================================
 
-  if (
-    file.type ===
-    "text/plain"
-  ) {
-    console.log(
-      "Extracting TXT..."
-    );
+  if (file.type === "text/plain") {
+    console.log("Extracting TXT...");
 
-    const resumeText =
-      await file.text();
+    const resumeText = await file.text();
 
-    console.log(
-      "Extracted TXT text:",
-      resumeText
-    );
-
-    console.log(
-      "TXT text length:",
-      resumeText.length
-    );
+    console.log("Extracted TXT text:", resumeText);
+    console.log("TXT text length:", resumeText.length);
 
     return {
-      resumeText:
-        resumeText.trim(),
-
+      resumeText: resumeText.trim(),
       totalPages: "N/A",
     };
   }
 
   // ====================================================
-  // UNSUPPORTED
+  // UNSUPPORTED FILE
   // ====================================================
 
   throw new Error(
-    "Unsupported file format. Please upload a PDF, DOCX, or TXT resume."
+    "Unsupported file format. Please upload a PDF, DOCX, or TXT resume.",
   );
 }
 
@@ -574,9 +552,7 @@ async function extractResumeText(
 // REPORT TEXT
 // ======================================================
 
-function generateReportText(
-  data
-) {
+function generateReportText(data) {
   return `
 ================================
       AI RESUME ANALYZER
@@ -585,21 +561,6 @@ function generateReportText(
 File Name: ${data.fileName}
 File Size: ${data.fileSize} KB
 Total Pages: ${data.totalPages}
-
---------------------------------
-ROLE ANALYSIS
---------------------------------
-
-Detected Role: ${data.detectedRole}
-
-Confidence: ${data.confidence}%
-
-Confidence Level: ${data.confidenceLevel}
-
-Profile Source: ${data.profileSource}
-
-Reason:
-${data.roleReason}
 
 --------------------------------
 ATS SCORE
@@ -613,9 +574,9 @@ Breakdown:
 
 Skills Score: ${data.skillScore}/50
 
-Section Score: ${data.sectionScore}/30
+Section Score: ${data.sectionScore}/35
 
-Action Words: ${data.actionScore}/20
+Action Words: ${data.actionScore}/15
 
 --------------------------------
 SKILLS FOUND
@@ -624,10 +585,10 @@ SKILLS FOUND
 ${data.foundSkills.join(", ")}
 
 --------------------------------
-MISSING ROLE SKILLS
+CATEGORIES FOUND
 --------------------------------
 
-${data.missingSkills.join(", ")}
+${data.foundCategories.join(", ")}
 
 --------------------------------
 RESUME SECTIONS
@@ -642,19 +603,25 @@ Missing Sections:
 ${data.missingSections.join(", ")}
 
 --------------------------------
-ACTION WORDS FOUND
+STRENGTHS
 --------------------------------
 
-${data.foundActionWords.join(", ")}
+${data.strengths.join("\n")}
 
 --------------------------------
-ACTION WORDS TO IMPROVE
+WEAKNESSES
 --------------------------------
 
-${data.missingActionWords.join(", ")}
+${data.weaknesses.join("\n")}
 
 --------------------------------
-OVERALL AI FEEDBACK
+SUGGESTIONS
+--------------------------------
+
+${data.suggestionText}
+
+--------------------------------
+AI FEEDBACK
 --------------------------------
 
 ${data.aiFeedback}
@@ -672,8 +639,7 @@ Generated By AI Resume Analyzer
 analyzeBtn.addEventListener(
   "click",
   async function () {
-    const file =
-      resumeFile.files[0];
+    const file = resumeFile.files[0];
 
     // ==================================================
     // NO FILE
@@ -681,16 +647,14 @@ analyzeBtn.addEventListener(
 
     if (!file) {
       resultBox.innerHTML = `
-        <p>
-          Please select a resume first.
-        </p>
+        <p>Please select a resume first.</p>
       `;
 
       return;
     }
 
     // ==================================================
-    // ALLOWED TYPES
+    // ALLOWED FILE TYPES
     // ==================================================
 
     const allowedTypes = [
@@ -701,15 +665,10 @@ analyzeBtn.addEventListener(
       "text/plain",
     ];
 
-    if (
-      !allowedTypes.includes(
-        file.type
-      )
-    ) {
+    if (!allowedTypes.includes(file.type)) {
       resultBox.innerHTML = `
         <p>
-          Please upload a valid PDF,
-          DOCX, or TXT resume.
+          Please upload a valid PDF, DOCX, or TXT resume.
         </p>
       `;
 
@@ -720,14 +679,7 @@ analyzeBtn.addEventListener(
     // FILE SIZE
     // ==================================================
 
-    const fileSize =
-      (
-        file.size / 1024
-      ).toFixed(2);
-
-    // ==================================================
-    // LOADING
-    // ==================================================
+    const fileSize = (file.size / 1024).toFixed(2);
 
     resultBox.innerHTML = `
       <p>
@@ -737,38 +689,31 @@ analyzeBtn.addEventListener(
 
     try {
       // ================================================
-      // STEP 1: EXTRACT RESUME
+      // EXTRACT TEXT
       // ================================================
 
       const extractedData =
-        await extractResumeText(
-          file
-        );
+        await extractResumeText(file);
 
-      const resumeText =
-        extractedData.resumeText;
+      const resumeText = extractedData.resumeText;
 
-      const totalPages =
-        extractedData.totalPages;
+      const totalPages = extractedData.totalPages;
 
       console.log(
         "FINAL RESUME TEXT:",
-        resumeText
+        resumeText,
       );
 
       console.log(
         "FINAL TEXT LENGTH:",
-        resumeText.length
+        resumeText.length,
       );
 
       // ================================================
-      // EMPTY RESUME CHECK
+      // CHECK EMPTY FILE
       // ================================================
 
-      if (
-        !resumeText ||
-        resumeText.length < 20
-      ) {
+      if (!resumeText || resumeText.length < 20) {
         resultBox.innerHTML = `
           <p>
             Could not extract enough text from this file.
@@ -783,7 +728,242 @@ analyzeBtn.addEventListener(
       }
 
       // ================================================
-      // STEP 2: ROLE ANALYSIS
+      // SKILL CATEGORIES
+      // ================================================
+
+      const skillCategories = {
+        languages: [
+          "C",
+          "C++",
+          "Java",
+          "Python",
+          "JavaScript",
+          "TypeScript",
+        ],
+
+        frontend: [
+          "HTML",
+          "CSS",
+          "React",
+          "Redux",
+          "Tailwind",
+          "Bootstrap",
+        ],
+
+        backend: [
+          "Node",
+          "Express",
+          "Django",
+          "Flask",
+          "Spring",
+        ],
+
+        databases: [
+          "MongoDB",
+          "SQL",
+          "MySQL",
+          "PostgreSQL",
+          "Firebase",
+        ],
+
+        tools: [
+          "Git",
+          "GitHub",
+          "Postman",
+          "VS Code",
+          "Docker",
+        ],
+
+        fundamentals: [
+          "DSA",
+          "OOP",
+          "DBMS",
+          "OS",
+          "CN",
+        ],
+      };
+
+      // ================================================
+      // REQUIRED SECTIONS
+      // ================================================
+
+      const requiredSections = [
+        "Education",
+        "Projects",
+        "Experience",
+        "Skills",
+        "Certifications",
+      ];
+
+      // ================================================
+      // ACTION WORDS
+      // ================================================
+
+      const actionWords = [
+        "Built",
+        "Developed",
+        "Created",
+        "Implemented",
+        "Designed",
+        "Optimized",
+        "Managed",
+        "Led",
+      ];
+
+      // ================================================
+      // DETECT SKILLS
+      // ================================================
+
+      const skillResult = detectSkills(
+        resumeText,
+        skillCategories,
+      );
+
+      const foundSkills = skillResult.foundSkills;
+
+      const foundCategories =
+        skillResult.foundCategories;
+
+      // ================================================
+      // MISSING SKILLS
+      // ================================================
+
+      const missingSkills = detectMissingSkills(
+        skillCategories,
+        foundSkills,
+      );
+
+      const limitedMissingSkills =
+        missingSkills.slice(0, 10);
+
+      // ================================================
+      // ACTION WORDS
+      // ================================================
+
+      const foundActionWords =
+        detectActionWords(
+          resumeText,
+          actionWords,
+        );
+
+      // ================================================
+      // SECTIONS
+      // ================================================
+
+      const sectionResult = detectSections(
+        resumeText,
+        requiredSections,
+      );
+
+      const foundSections =
+        sectionResult.foundSections;
+
+      const missingSections =
+        sectionResult.missingSections;
+
+      // ================================================
+      // STRENGTHS / WEAKNESSES
+      // ================================================
+
+      const strengthResult =
+        generateStrengthsWeaknesses(
+          foundCategories,
+        );
+
+      const strengths =
+        strengthResult.strengths;
+
+      const weaknesses =
+        strengthResult.weaknesses;
+
+      const strengthHTMLResult =
+        generateStrengthWeakness(
+          strengths,
+          weaknesses,
+        );
+
+      const strengthsHTML =
+        strengthHTMLResult.strengthsHTML;
+
+      const weaknessesHTML =
+        strengthHTMLResult.weaknessesHTML;
+
+      // ================================================
+      // SUGGESTIONS
+      // ================================================
+
+      const suggestions =
+        generateSuggestions(
+          foundCategories,
+        );
+
+      const skillsHTML =
+        foundSkills.length > 0
+          ? generateSkillsHTML(foundSkills)
+          : "<p>No major technical skills detected.</p>";
+
+      const missingSkillsHTML =
+        limitedMissingSkills.length > 0
+          ? generateMissingSkillsHTML(
+              limitedMissingSkills,
+            )
+          : "<p>No major missing skills detected.</p>";
+
+      const sectionsHTML =
+        generateSectionsHTML(
+          requiredSections,
+          foundSections,
+        );
+
+      const actionWordsHTML =
+        generateActionWordsHTML(
+          foundActionWords,
+        );
+
+      const suggestionHTML =
+        suggestions.length > 0
+          ? suggestions.join("<br>")
+          : "Great! Your resume covers the important skill areas.";
+
+      const suggestionText =
+        suggestions.length > 0
+          ? suggestions.join("\n")
+          : "Great! Your resume covers the important skill areas.";
+
+      // ================================================
+      // ATS SCORE
+      // ================================================
+
+      const scoreResult =
+        generateATSScore(
+          foundSkills,
+          foundSections,
+          foundActionWords,
+          skillCategories,
+          requiredSections,
+          actionWords,
+        );
+
+      const atsScore =
+        scoreResult.atsScore;
+
+      const skillScore =
+        scoreResult.skillScore;
+
+      const sectionScore =
+        scoreResult.sectionScore;
+
+      const actionScore =
+        scoreResult.actionScore;
+
+      const barColor =
+        getBarColor(atsScore);
+
+      const status =
+        getStatus(atsScore);
+
+      // ================================================
+      // AI FEEDBACK
       // ================================================
 
       resultBox.innerHTML = `
@@ -792,163 +972,7 @@ analyzeBtn.addEventListener(
         </p>
 
         <p>
-          Detecting resume role...
-        </p>
-      `;
-
-      const roleAnalysis =
-        await getRoleAnalysis(
-          resumeText
-        );
-
-      console.log(
-        "ROLE ANALYSIS:",
-        roleAnalysis
-      );
-
-      // ================================================
-      // GET ROLE DATA
-      // ================================================
-
-      const detectedRole =
-        roleAnalysis.normalizedRole ||
-        roleAnalysis.detectedRole;
-
-      const confidence =
-        roleAnalysis.confidence;
-
-      const confidenceLevel =
-        roleAnalysis.confidenceLevel;
-
-      const roleReason =
-        roleAnalysis.reason;
-
-      const profileSource =
-        roleAnalysis.profileSource;
-
-      const alternativeRoles =
-        roleAnalysis.alternativeRoles ||
-        [];
-
-      // ================================================
-      // GET ATS DATA
-      // ================================================
-
-      const ats =
-        roleAnalysis.ats;
-
-      if (!ats) {
-        throw new Error(
-          "Role analysis did not return ATS data."
-        );
-      }
-
-      const atsScore =
-        ats.atsScore;
-
-      const skillScore =
-        ats.skillScore;
-
-      const sectionScore =
-        ats.sectionScore;
-
-      const actionScore =
-        ats.actionScore;
-
-      const foundSkills =
-        ats.foundSkills || [];
-
-      const missingSkills =
-        ats.missingSkills || [];
-
-      const foundSections =
-        ats.foundSections || [];
-
-      const missingSections =
-        ats.missingSections || [];
-
-      const foundActionWords =
-        ats.foundActionWords || [];
-
-      const missingActionWords =
-        ats.missingActionWords || [];
-
-      // ================================================
-      // ROLE PROFILE
-      // ================================================
-
-      const roleProfile =
-        roleAnalysis.roleProfile || {
-          skills: [],
-          sections: [],
-          actionWords: [],
-        };
-
-      // ================================================
-      // ROLE HTML
-      // ================================================
-
-      const skillsHTML =
-        generateSkillsHTML(
-          foundSkills
-        );
-
-      const missingSkillsHTML =
-        generateMissingSkillsHTML(
-          missingSkills
-        );
-
-      const sectionsHTML =
-        generateSectionsHTML(
-          roleProfile.sections,
-          foundSections
-        );
-
-      const actionWordsHTML =
-        generateActionWordsHTML(
-          foundActionWords
-        );
-
-      const missingActionWordsHTML =
-        generateMissingActionWordsHTML(
-          missingActionWords
-        );
-
-      // ================================================
-      // STATUS / BAR
-      // ================================================
-
-      const barColor =
-        getBarColor(
-          atsScore
-        );
-
-      const status =
-        getStatus(
-          atsScore
-        );
-
-      // ================================================
-      // STEP 3: AI FEEDBACK
-      // ================================================
-
-      resultBox.innerHTML = `
-        <p>
-          Role detected:
-          <strong>
-            ${detectedRole}
-          </strong>
-        </p>
-
-        <p>
-          Confidence:
-          <strong>
-            ${confidence}%
-          </strong>
-        </p>
-
-        <p>
-          Generating overall AI feedback...
+          Generating AI feedback...
         </p>
       `;
 
@@ -957,36 +981,16 @@ analyzeBtn.addEventListener(
       try {
         aiFeedback =
           await getAIFeedback(
-            resumeText
+            resumeText,
           );
       } catch (error) {
         console.error(
           "AI ERROR:",
-          error
+          error,
         );
 
         aiFeedback =
           "AI feedback could not be generated right now. Please try again.";
-      }
-
-      // ================================================
-      // ALTERNATIVE ROLES
-      // ================================================
-
-      let alternativeRolesHTML =
-        "<p>No alternative roles provided.</p>";
-
-      if (
-        alternativeRoles.length >
-        0
-      ) {
-        alternativeRolesHTML =
-          alternativeRoles
-            .map(
-              (role) =>
-                `<span class="skill-badge">${role}</span>`
-            )
-            .join("");
       }
 
       // ================================================
@@ -995,76 +999,46 @@ analyzeBtn.addEventListener(
 
       reportText =
         generateReportText({
-          fileName:
-            file.name,
+          fileName: file.name,
 
-          fileSize:
-            fileSize,
+          fileSize: fileSize,
 
-          totalPages:
-            totalPages,
+          totalPages: totalPages,
 
-          detectedRole:
-            detectedRole,
+          atsScore: atsScore,
 
-          confidence:
-            confidence,
+          status: status,
 
-          confidenceLevel:
-            confidenceLevel,
+          skillScore: skillScore,
 
-          profileSource:
-            profileSource,
+          sectionScore: sectionScore,
 
-          roleReason:
-            roleReason,
+          actionScore: actionScore,
 
-          atsScore:
-            atsScore,
+          foundSkills: foundSkills,
 
-          status:
-            status,
+          foundCategories: foundCategories,
 
-          skillScore:
-            skillScore,
+          foundSections: foundSections,
 
-          sectionScore:
-            sectionScore,
+          missingSections: missingSections,
 
-          actionScore:
-            actionScore,
+          strengths: strengths,
 
-          foundSkills:
-            foundSkills,
+          weaknesses: weaknesses,
 
-          missingSkills:
-            missingSkills,
+          suggestionText: suggestionText,
 
-          foundSections:
-            foundSections,
-
-          missingSections:
-            missingSections,
-
-          foundActionWords:
-            foundActionWords,
-
-          missingActionWords:
-            missingActionWords,
-
-          aiFeedback:
-            aiFeedback,
+          aiFeedback: aiFeedback,
         });
 
       // ================================================
-      // STEP 4: DISPLAY RESULT
+      // DISPLAY RESULT
       // ================================================
 
       resultBox.innerHTML = `
 
-        <h3>
-          Resume Analysis
-        </h3>
+        <h3>Resume Analysis</h3>
 
         <p>
           <strong>File:</strong>
@@ -1081,78 +1055,8 @@ analyzeBtn.addEventListener(
           ${totalPages}
         </p>
 
-        <hr>
-
-        <h3>
-          🎯 Detected Role
-        </h3>
-
         <p>
-          <strong>
-            ${detectedRole}
-          </strong>
-        </p>
-
-        <p>
-          <strong>
-            Confidence:
-          </strong>
-
-          ${confidence}%
-        </p>
-
-        <p>
-          <strong>
-            Confidence Level:
-          </strong>
-
-          ${confidenceLevel}
-        </p>
-
-        <p>
-          <strong>
-            Profile Source:
-          </strong>
-
-          ${
-            profileSource ===
-            "curated"
-              ? "Verified Role Profile"
-              : "AI Generated Role Profile"
-          }
-        </p>
-
-        <p>
-          <strong>
-            Why this role?
-          </strong>
-        </p>
-
-        <p>
-          ${roleReason}
-        </p>
-
-        <p>
-          <strong>
-            Alternative Roles:
-          </strong>
-        </p>
-
-        <div>
-          ${alternativeRolesHTML}
-        </div>
-
-        <hr>
-
-        <h3>
-          📊 Role-Specific ATS Score
-        </h3>
-
-        <p>
-          <strong>
-            ATS Score:
-          </strong>
-
+          <strong>ATS Score:</strong>
           ${atsScore}/100
         </p>
 
@@ -1164,58 +1068,37 @@ analyzeBtn.addEventListener(
               width:${atsScore}%;
               background:${barColor};
             "
-          ></div>
+          >
+          </div>
 
         </div>
 
         <p>
-          <strong>
-            Status:
-          </strong>
-
+          <strong>Status:</strong>
           ${status}
         </p>
 
         <div class="stats-container">
 
           <div class="stat-card">
-            <h3>
-              ${skillScore}/50
-            </h3>
-
-            <p>
-              Role Skills
-            </p>
+            <h3>${skillScore}/50</h3>
+            <p>Skills</p>
           </div>
 
           <div class="stat-card">
-            <h3>
-              ${sectionScore}/30
-            </h3>
-
-            <p>
-              Sections
-            </p>
+            <h3>${sectionScore}/35</h3>
+            <p>Sections</p>
           </div>
 
           <div class="stat-card">
-            <h3>
-              ${actionScore}/20
-            </h3>
-
-            <p>
-              Action Words
-            </p>
+            <h3>${actionScore}/15</h3>
+            <p>Action Words</p>
           </div>
 
         </div>
 
-        <hr>
-
         <p>
-          <strong>
-            Role-Specific Skills Found:
-          </strong>
+          <strong>Skills Found:</strong>
         </p>
 
         <div>
@@ -1223,9 +1106,7 @@ analyzeBtn.addEventListener(
         </div>
 
         <p>
-          <strong>
-            Role-Specific Missing Skills:
-          </strong>
+          <strong>Missing Skills:</strong>
         </p>
 
         <div>
@@ -1233,19 +1114,7 @@ analyzeBtn.addEventListener(
         </div>
 
         <p>
-          <strong>
-            Resume Sections:
-          </strong>
-        </p>
-
-        <div>
-          ${sectionsHTML}
-        </div>
-
-        <p>
-          <strong>
-            Action Words Found:
-          </strong>
+          <strong>Action Words Found:</strong>
         </p>
 
         <div>
@@ -1253,27 +1122,47 @@ analyzeBtn.addEventListener(
         </div>
 
         <p>
-          <strong>
-            Action Words You Can Improve:
-          </strong>
+          <strong>Resume Sections:</strong>
         </p>
 
         <div>
-          ${missingActionWordsHTML}
+          ${sectionsHTML}
         </div>
 
-        <hr>
+        <p>
+          <strong>Strengths:</strong>
+        </p>
+
+        <div>
+          ${strengthsHTML}
+        </div>
+
+        <p>
+          <strong>Weaknesses:</strong>
+        </p>
+
+        <div>
+          ${weaknessesHTML}
+        </div>
+
+        <p>
+          <strong>Suggestions:</strong>
+        </p>
+
+        <p>
+          ${suggestionHTML}
+        </p>
 
         <div class="ai-cards">
 
           <h3>
-            🤖 Overall AI Feedback
+            <strong>AI Feedback</strong>
           </h3>
 
           <p>
             ${aiFeedback.replace(
               /\n/g,
-              "<br>"
+              "<br>",
             )}
           </p>
 
@@ -1282,13 +1171,12 @@ analyzeBtn.addEventListener(
       `;
 
       console.log(
-        "========== ANALYSIS COMPLETE =========="
+        "========== ANALYSIS COMPLETE ==========",
       );
-
     } catch (error) {
       console.error(
         "RESUME ANALYSIS ERROR:",
-        error
+        error,
       );
 
       resultBox.innerHTML = `
@@ -1303,7 +1191,7 @@ analyzeBtn.addEventListener(
         </p>
       `;
     }
-  }
+  },
 );
 
 // ======================================================
@@ -1313,42 +1201,32 @@ analyzeBtn.addEventListener(
 downloadBtn.addEventListener(
   "click",
   function () {
-    if (
-      reportText === ""
-    ) {
+    if (reportText === "") {
       alert(
-        "Please analyze a resume first."
+        "Please analyze a resume first.",
       );
 
       return;
     }
 
-    const blob =
-      new Blob(
-        [reportText],
-        {
-          type:
-            "text/plain",
-        }
-      );
+    const blob = new Blob(
+      [reportText],
+      {
+        type: "text/plain",
+      },
+    );
 
     const link =
-      document.createElement(
-        "a"
-      );
+      document.createElement("a");
 
     link.href =
-      URL.createObjectURL(
-        blob
-      );
+      URL.createObjectURL(blob);
 
     link.download =
       "resume-analysis-report.txt";
 
     link.click();
 
-    URL.revokeObjectURL(
-      link.href
-    );
-  }
+    URL.revokeObjectURL(link.href);
+  },
 );

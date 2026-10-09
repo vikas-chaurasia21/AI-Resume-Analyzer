@@ -1,0 +1,133 @@
+/* Base: reset, page layout, upload controls, responsive layout */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #dbeafe, #f8fafc);
+    padding: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    width: 850px;
+    max-width: 95%;
+    background: white;
+    padding: 35px;
+    border-radius: 18px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #1e293b;
+}
+
+.subtitle {
+    text-align: center;
+    color: gray;
+    margin-bottom: 25px;
+}
+
+.upload-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+#resumeFile {
+    flex: 1;
+    padding: 10px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    background: white;
+}
+
+#analyzeBtn,
+#downloadBtn {
+    border: none;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#analyzeBtn {
+    padding: 10px 20px;
+    background: #2563eb;
+}
+
+#analyzeBtn:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+#analyzeBtn:disabled {
+    background: #93c5fd;
+    cursor: wait;
+}
+
+#downloadBtn {
+    margin-top: 15px;
+    width: 100%;
+    padding: 10px;
+    background: #16a34a;
+}
+
+#downloadBtn:hover {
+    background: #15803d;
+}
+
+#resultBox {
+    background: #f8fafc;
+    padding: 25px;
+    border-radius: 14px;
+    min-height: 150px;
+    margin-top: 20px;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+#resultBox p {
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+#resultBox h3 {
+    margin-bottom: 15px;
+    color: #1e293b;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 15px;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 450px;
+        padding: 20px;
+    }
+
+    .upload-section {
+        flex-direction: column;
+    }
+
+    #analyzeBtn {
+        width: 100%;
+    }
+
+    #resultBox {
+        padding: 18px;
+        font-size: 14px;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+}

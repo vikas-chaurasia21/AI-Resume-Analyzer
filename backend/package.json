@@ -1,0 +1,24 @@
+{
+  "name": "ai-resume-analyzer-backend",
+  "version": "2.0.0",
+  "description": "Backend API for AI Resume Analyzer: role detection, deterministic ATS scoring and AI feedback.",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "frontend" : "npx serve .",
+    "dev": "node --watch server.js",
+    "test": "node --test"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^7.5.0"
+  }
+}

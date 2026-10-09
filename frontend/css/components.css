@@ -1,0 +1,151 @@
+/* Result components: sections, badges, progress bars, stat cards, AI card */
+
+.result-section {
+    margin-top: 20px;
+}
+
+.result-section h4 {
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.muted {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.badge-list {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.skill-badge,
+.missing-skill-badge,
+.action-badge,
+.role-badge,
+.section-found,
+.section-missing {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin: 5px;
+    font-size: 14px;
+}
+
+.skill-badge {
+    background: #2563eb;
+    color: white;
+}
+
+.missing-skill-badge {
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 600;
+}
+
+.action-badge {
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 600;
+}
+
+.role-badge {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.section-found {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.section-missing {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.role-card {
+    background: #eff6ff;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.role-name {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1e3a8a;
+}
+
+.progress-container {
+    width: 100%;
+    height: 20px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    margin: 10px 0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #22c55e;
+    border-radius: 20px;
+}
+
+.confidence-bar {
+    background: #6366f1;
+}
+
+.stats-container {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    flex: 1;
+    background: #f1f5f9;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    transition: 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h3 {
+    color: #2563eb;
+    margin-bottom: 5px;
+}
+
+.ai-card {
+    background: #eef2ff;
+    border-left: 5px solid #4f46e5;
+    padding: 18px;
+    border-radius: 12px;
+    margin-top: 20px;
+    line-height: 1.7;
+}
+
+.ai-card h3 {
+    color: #3730a3;
+    margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+    .stats-container {
+        flex-direction: column;
+    }
+
+    .skill-badge,
+    .missing-skill-badge,
+    .action-badge,
+    .role-badge,
+    .section-found,
+    .section-missing {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}

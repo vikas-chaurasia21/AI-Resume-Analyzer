@@ -3,7 +3,7 @@ const isLocalhost = ['localhost', '127.0.0.1'].includes(globalThis.location?.hos
 // Backend base URL. This is a public address, not a secret: the Gemini key only ever lives on the server.
 export const API_BASE_URL = isLocalhost
   ? 'http://localhost:5000'
-  : 'https://ai-resume-analyzer-backend-vv21.vercel.app';
+  : ' https://ai-resume-analyzer-nxh6.onrender.com';
 
 export const API_TIMEOUT_MS = 60000;
 
